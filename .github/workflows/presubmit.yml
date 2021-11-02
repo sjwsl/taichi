@@ -21,6 +21,30 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
 
+  check_clang_tidy:
+    name: Check clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Setup clang & clang-tidy
+        run: |
+          sudo apt install -y clang clang-tidy
+      - name: Setup llvm
+        run: |
+          curl --retry 10 --retry-delay 5 https://github.com/taichi-dev/taichi_assets/releases/download/llvm10/taichi-llvm-10.0.0-linux.zip -ollvm.zip -L0
+          unzip llvm.zip -d llvm
+          mkdir build && cd build
+
+      - name: Run clang-tidy
+        run: |
+          LLVM_DIR=../llvm cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
+          cd ..
+          python3 ./scripts/run-clang-tidy.py $PWD/taichi -checks=-*,bugprone-copy-constructor-init -header-filter=$PWD/taichi -p $PWD/build -j8
+
   check_code_format:
     name: Check Code Format
     runs-on: ubuntu-latest
