@@ -1620,7 +1620,7 @@ std::string CodeGenLLVM::init_offloaded_task_function(OffloadedStmt *stmt,
   kernel_args[0]->setName("context");
 
   if (kernel_argument_by_val())
-    func->addParamAttr(0, llvm::Attribute::ByVal);
+    func->addParamAttr(0, llvm::Attribute::get(*llvm_context, llvm::Attribute::ByVal, context_ty));
 
   // entry_block has all the allocas
   this->entry_block = llvm::BasicBlock::Create(*llvm_context, "entry", func);
