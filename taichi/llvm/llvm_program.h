@@ -8,7 +8,6 @@
 #include "taichi/system/threading.h"
 #include "llvm/IR/Module.h"
 #include "taichi/struct/struct.h"
-#include "taichi/struct/struct_llvm.h"
 #include "taichi/program/snode_expr_utils.h"
 #include "taichi/system/memory_pool.h"
 #include "taichi/program/program_impl.h"

@@ -88,9 +88,9 @@ std::string JITSessionCUDA::compile_module_to_ptx(
   }
 
   for (auto &f : module->globals())
-    f.setName(convert(f.getName()));
+    f.setName(convert(f.getName().str()));
   for (auto &f : *module)
-    f.setName(convert(f.getName()));
+    f.setName(convert(f.getName().str()));
 
   llvm::Triple triple(module->getTargetTriple());
 
@@ -104,7 +104,6 @@ std::string JITSessionCUDA::compile_module_to_ptx(
   bool fast_math = get_current_program().config.fast_math;
 
   TargetOptions options;
-  options.PrintMachineCode = 0;
   if (fast_math) {
     options.AllowFPOpFusion = FPOpFusion::Fast;
     // See NVPTXISelLowering.cpp

@@ -26,6 +26,7 @@
 #include "llvm/Support/DynamicLibrary.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/Host.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
@@ -94,23 +95,19 @@ class JITSessionCPU : public JITSession {
   std::mutex mut;
   std::vector<llvm::orc::JITDylib *> all_libs;
   int module_counter;
-  SectionMemoryManager *memory_manager;
 
  public:
   JITSessionCPU(JITTargetMachineBuilder JTMB, DataLayout DL)
       : object_layer(ES,
-                     [&]() {
-                       auto smgr = std::make_unique<SectionMemoryManager>();
-                       memory_manager = smgr.get();
-                       return smgr;
+                     []() {
+                        return std::make_unique<SectionMemoryManager>();
                      }),
         compile_layer(ES,
                       object_layer,
                       std::make_unique<ConcurrentIRCompiler>(JTMB)),
         DL(DL),
         Mangle(ES, this->DL),
-        module_counter(0),
-        memory_manager(nullptr) {
+        module_counter(0) {
     if (JTMB.getTargetTriple().isOSBinFormatCOFF()) {
       object_layer.setOverrideObjectFlagsWithResponsibilityFlags(true);
       object_layer.setAutoClaimResponsibilityForObjectSymbols(true);
@@ -119,8 +116,9 @@ class JITSessionCPU : public JITSession {
 
   ~JITSessionCPU() {
     std::lock_guard<std::mutex> _(mut);
-    if (memory_manager)
-      memory_manager->deregisterEHFrames();
+    for (auto& lib : all_libs) {
+      cantFail(lib->clear());
+    }
   }
 
   DataLayout get_data_layout() override {
@@ -136,7 +134,7 @@ class JITSessionCPU : public JITSession {
     TI_ASSERT(M);
     global_optimize_module_cpu(M.get());
     std::lock_guard<std::mutex> _(mut);
-    auto &dylib = ES.createJITDylib(fmt::format("{}", module_counter));
+    auto &dylib = ES.createBareJITDylib(fmt::format("{}", module_counter));
     dylib.addGenerator(
         cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
             DL.getGlobalPrefix())));
@@ -201,7 +199,6 @@ void JITSessionCPU::global_optimize_module_cpu(llvm::Module *module) {
   TI_ERROR_UNLESS(target, err_str);
 
   TargetOptions options;
-  options.PrintMachineCode = false;
   bool fast_math = get_current_program().config.fast_math;
   if (fast_math) {
     options.AllowFPOpFusion = FPOpFusion::Fast;

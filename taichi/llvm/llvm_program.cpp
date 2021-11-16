@@ -10,6 +10,7 @@
 #include "taichi/ir/statements.h"
 #include "taichi/backends/cpu/cpu_device.h"
 #include "taichi/backends/cuda/cuda_device.h"
+#include "taichi/struct/struct_llvm.h"
 
 #include "taichi/backends/cuda/cuda_device.h"
 

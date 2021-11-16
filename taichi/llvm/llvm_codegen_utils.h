@@ -68,7 +68,7 @@ class LLVMModuleBuilder {
     builder->SetInsertPoint(entry_block);
     auto alloca = builder->CreateAlloca(type, (unsigned)0, array_size);
     if (alignment != 0) {
-      alloca->setAlignment(llvm::MaybeAlign(alignment));
+      alloca->setAlignment(llvm::Align(alignment));
     }
     return alloca;
   }
@@ -81,7 +81,7 @@ class LLVMModuleBuilder {
   }
 
   llvm::Type *get_runtime_type(const std::string &name) {
-    auto ty = module->getTypeByName("struct." + name);
+    auto ty = llvm::StructType::getTypeByName(module->getContext(), "struct." + name);
     if (!ty) {
       TI_ERROR("LLVMRuntime type {} not found.", name);
     }
@@ -187,7 +187,8 @@ class RuntimeObject {
     auto func = get_func(func_name);
     auto arglist = std::vector<llvm::Value *>({ptr, args...});
     check_func_call_signature(func, arglist);
-    return builder->CreateCall(func, arglist);
+    return builder->CreateCall(llvm::cast<llvm::FunctionType>(func->getType()->getPointerElementType()), func, arglist);
+    //return builder->CreateCall(func, arglist);
   }
 
   llvm::Value *get_func(const std::string &func_name) const {

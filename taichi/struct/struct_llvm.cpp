@@ -317,7 +317,7 @@ llvm::Type *StructCompilerLLVM::get_stub(llvm::Module *module,
                                          uint32 index) {
   TI_ASSERT(module);
   TI_ASSERT(snode);
-  auto stub = module->getTypeByName(type_stub_name(snode));
+  auto stub = llvm::StructType::getTypeByName(module->getContext(), type_stub_name(snode));
   TI_ASSERT(stub);
   TI_ASSERT(stub->getStructNumElements() == 4);
   TI_ASSERT(0 <= index && index < 4);

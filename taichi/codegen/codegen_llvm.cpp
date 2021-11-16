@@ -946,7 +946,8 @@ void CodeGenLLVM::emit_gc(OffloadedStmt *stmt) {
 llvm::Value *CodeGenLLVM::create_call(llvm::Value *func,
                                       llvm::ArrayRef<llvm::Value *> args) {
   check_func_call_signature(func, args);
-  return builder->CreateCall(func, args);
+  return builder->CreateCall(llvm::cast<llvm::FunctionType>(func->getType()->getPointerElementType()), func, args);
+  // return builder->CreateCall(func, args);
 }
 
 llvm::Value *CodeGenLLVM::create_call(std::string func_name,

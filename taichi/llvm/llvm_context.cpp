@@ -18,6 +18,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
@@ -415,7 +416,7 @@ void TaichiLLVMContext::link_module_with_cuda_libdevice(
   std::vector<std::string> libdevice_function_names;
   for (auto &f : *libdevice_module) {
     if (!f.isDeclaration()) {
-      libdevice_function_names.push_back(f.getName());
+      libdevice_function_names.push_back(f.getName().str());
     }
   }
 
@@ -627,7 +628,7 @@ void TaichiLLVMContext::eliminate_unused_functions(
   llvm::PassBuilder pb;
   pb.registerModuleAnalyses(ana);
   manager.addPass(llvm::InternalizePass([&](const GlobalValue &val) -> bool {
-    return export_indicator(val.getName());
+    return export_indicator(val.getName().str());
   }));
   manager.addPass(GlobalDCEPass());
   manager.run(*module, ana);
@@ -709,7 +710,7 @@ void TaichiLLVMContext::update_runtime_jit_module(
   if (arch == Arch::cuda) {
     for (auto &f : *module) {
       bool is_kernel = false;
-      const std::string func_name = f.getName();
+      const std::string func_name = f.getName().str();
       if (starts_with(func_name, "runtime_")) {
         mark_function_as_cuda_kernel(&f);
         is_kernel = true;
