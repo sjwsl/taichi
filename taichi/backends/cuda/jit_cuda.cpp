@@ -167,7 +167,7 @@ std::string JITSessionCUDA::compile_module_to_ptx(
 
   if (kFTZDenorms) {
     for (llvm::Function &fn : *module) {
-      fn.addFnAttr("nvptx-f32ftz", "true");
+      fn.addFnAttr("denormal-fp-math-f32", "preserve-sign");
     }
   }
 
